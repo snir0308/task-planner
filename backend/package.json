@@ -1,0 +1,13 @@
+{
+  "name": "board-persistence",
+  "version": "1.0.0",
+  "description": "Google Cloud Function to persist board JSON to GCS",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/storage": "^7.0.0",
+    "bcrypt": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
