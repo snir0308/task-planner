@@ -1,5 +1,9 @@
 /**
  * @typedef {import('../types.js').Task} Task
+ * @typedef {Object} Favorite
+ * @property {string} id
+ * @property {string} url
+ * @property {string} text
  *
  * @interface BoardService
  * @description Defines the interface for managing board data.
@@ -75,7 +79,7 @@ export class BoardService {
 
   /**
    * Retrieves the user's display name.
-   * @returns {Promise<string>} A promise that resolves to the display name.
+   * @returns {Promise<string>} A promise that resolves to the user's display name.
    */
   async getDisplayName() {
     throw new Error("Method 'getDisplayName()' must be implemented.");
@@ -88,5 +92,40 @@ export class BoardService {
    */
   async setDisplayName(name) {
     throw new Error("Method 'setDisplayName()' must be implemented.");
+  }
+
+  /**
+   * Retrieves the list of favorites.
+   * @returns {Promise<Favorite[]>} A promise that resolves to the list of favorites.
+   */
+  async getFavorites() {
+    throw new Error("Method 'getFavorites()' must be implemented.");
+  }
+
+  /**
+   * Sets the list of favorites.
+   * @param {Favorite[]} favorites - The new list of favorites.
+   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   */
+  async setFavorites(favorites) {
+    throw new Error("Method 'setFavorites()' must be implemented.");
+  }
+
+  /**
+   * Adds a new favorite.
+   * @param {Omit<Favorite, 'id'>} favoriteData - The data for the new favorite.
+   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   */
+  async addFavorite(favoriteData) {
+    throw new Error("Method 'addFavorite()' must be implemented.");
+  }
+
+  /**
+   * Deletes a favorite.
+   * @param {string} id - The ID of the favorite to delete.
+   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   */
+  async deleteFavorite(id) {
+    throw new Error("Method 'deleteFavorite()' must be implemented.");
   }
 }

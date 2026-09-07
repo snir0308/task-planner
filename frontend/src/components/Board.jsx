@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
-import { Camera, Download, FileText, Sparkles, User } from "lucide-react";
+import { Camera, Download, FileText, Sparkles, User, Star } from "lucide-react";
 import Quadrant from "./Quadrant.jsx";
 import Sidebar from "./Sidebar.jsx";
 import TaskModal from "./TaskModal.jsx";
 import CleanupModal from "./CleanupModal.jsx";
 import ProfileModal from "./ProfileModal.jsx";
+import FavoritesModal from "./FavoritesModal.jsx";
 import { QUADRANT_CONFIG } from "../config.js";
 import { useBoardService } from "../context/BoardServiceContext.jsx";
 
@@ -17,6 +18,7 @@ export default function Board({ readOnly = false }) {
   const [editingTask, setEditingTask] = useState(null);
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
    const [profileImage, setProfileImage] = useState("");
    const [displayName, setDisplayName] = useState("");
    const [purposeStatement, setPurposeStatement] = useState("");
@@ -43,8 +45,6 @@ export default function Board({ readOnly = false }) {
      };
      loadData();
    }, [boardService]);
-
- 
 
   // Save tasks when they change
   useEffect(() => {
@@ -246,7 +246,6 @@ export default function Board({ readOnly = false }) {
     setProfileImage(imageUrl);
     setPurposeStatement(purpose);
   };
- 
 
   return (
     <div className="h-[calc(100vh-16px)] max-h-[calc(100vh-16px)] bg-zinc-50 text-zinc-900 font-sans flex flex-col overflow-hidden">
@@ -280,7 +279,7 @@ export default function Board({ readOnly = false }) {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-zinc-900 leading-none group-hover/title:text-zinc-700 transition-colors">2x2</h1>
               {displayName && (
-                <span className="text-sm font-medium text-zinc-500 ml-2">| {displayName}</span>
+                <span className="text-sm font-medium text-zinc-500 ml-2">| {displayName}</span >
               )}
             </div >
             <p className="text-[10px] font-sans text-zinc-400 uppercase tracking-widest mt-0.5 font-semibold">task planner</p>
@@ -296,6 +295,14 @@ export default function Board({ readOnly = false }) {
           </div >
           {!readOnly && (
             <>
+              <button
+                onClick={() => setFavoritesOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 border text-[10px] bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-all"
+                title="Open Favorites"
+              >
+                <Star className="w-3.5 h-3.5" />
+                Favorites
+              </button>
               <button
                 onClick={downloadBackup}
                 className={`flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest transition-all ${backupInfo.isOverdue ? "bg-rose-50 border-rose-300 text-rose-600 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-100/50" : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900"}`}
@@ -341,8 +348,7 @@ export default function Board({ readOnly = false }) {
                onAddTask={readOnly ? undefined : () => createTask(quadrant.id)}
                onEditTask={(task) => { setEditingTask(task); setTaskModalOpen(true); }}
                onToggleStatus={toggleTaskStatus}
- 
-
+  
                onMoveTask={moveTask}
                onDelete={deleteTask}
                readOnly={readOnly}
@@ -391,6 +397,12 @@ export default function Board({ readOnly = false }) {
              onClose={() => setProfileOpen(false)} 
              onSave={saveProfile} 
              readOnly={readOnly}
+           />
+         )}
+         {!readOnly && favoritesOpen && (
+           <FavoritesModal 
+             isOpen={favoritesOpen} 
+             onClose={() => setFavoritesOpen(false)} 
            />
          )}
        </AnimatePresence>

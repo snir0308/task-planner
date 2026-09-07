@@ -15,11 +15,11 @@ export class LocalStorageBoardService extends BoardService {
     return stored ? JSON.parse(stored) : {
       tasks: [],
       profileImage: "",
-       purposeStatement: "",
-       displayName: "",
-       lastBackup: null
-     };
-
+      purposeStatement: "",
+      displayName: "",
+      lastBackup: null,
+      favorites: []
+    };
   }
 
   /**
@@ -76,34 +76,33 @@ export class LocalStorageBoardService extends BoardService {
   /**
    * @param {string} statement
    */
-   async setPurposeStatement(statement) {
-     const board = await this._getBoardState();
-     board.purposeStatement = statement;
-     await this._saveBoardState(board);
-   }
+  async setPurposeStatement(statement) {
+    const board = await this._getBoardState();
+    board.purposeStatement = statement;
+    await this._saveBoardState(board);
+  }
 
-   /**
-    * @returns {Promise<string>}
-    */
-   async getDisplayName() {
-     const board = await this._getBoardState();
-     return board.displayName || "";
-   }
+  /**
+   * @returns {Promise<string>}
+   */
+  async getDisplayName() {
+    const board = await this._getBoardState();
+    return board.displayName || "";
+  }
 
-   /**
-    * @param {string} name
-    */
-   async setDisplayName(name) {
-     const board = await this._getBoardState();
-     board.displayName = name;
-     await this._saveBoardState(board);
-   }
+  /**
+   * @param {string} name
+   */
+  async setDisplayName(name) {
+    const board = await this._getBoardState();
+    board.displayName = name;
+    await this._saveBoardState(board);
+  }
 
-   /**
-    * @returns {Promise<string|null>}
-    */
-   async getLastBackup() {
-
+  /**
+   * @returns {Promise<string|null>}
+   */
+  async getLastBackup() {
     const board = await this._getBoardState();
     return board.lastBackup || null;
   }
@@ -116,4 +115,44 @@ export class LocalStorageBoardService extends BoardService {
     board.lastBackup = timestamp;
     await this._saveBoardState(board);
   }
+
+  /**
+   * @returns {Promise<Array<Object>>}
+   */
+  async getFavorites() {
+    const board = await this._getBoardState();
+    return board.favorites || [];
+  }
+
+  /**
+   * @param {Array<Object>} favorites
+   */
+  async setFavorites(favorites) {
+    const board = await this._getBoardState();
+    board.favorites = favorites;
+    await this._saveBoardState(board);
+  }
+
+  /**
+   * @param {Object} favoriteData
+   */
+  async addFavorite(favoriteData) {
+    const board = await this._getBoardState();
+    const newFavorite = {
+      id: crypto.randomUUID(),
+      ...favoriteData
+    };
+    board.favorites = [...(board.favorites || []), newFavorite];
+    await this._saveBoardState(board);
+  }
+
+  /**
+   * @param {string} id
+   */
+  async deleteFavorite(id) {
+    const board = await this._getBoardState();
+    board.favorites = (board.favorites || []).filter((f) => f.id !== id);
+    await this._saveBoardState(board);
+  }
 }
+
