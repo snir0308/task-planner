@@ -5,10 +5,13 @@ import {
   ChevronRight,
   CircleCheck,
   CirclePlus,
-  EllipsisVertical,
   LayoutGrid,
   Trash2,
   X,
+  MessageSquare,
+  Edit2,
+  Send,
+  Clock,
 } from "lucide-react";
 import { QUADRANT_CONFIG } from "../config.js";
 
@@ -19,9 +22,15 @@ const sortSubtasks = (a, b) =>
     : 0;
 
 export default function TaskModal({ task, onClose, onSave, onDelete, readOnly }) {
-  const [draft, setDraft] = useState({ ...task });
+  const [draft, setDraft] = useState({ 
+    ...task, 
+    comments: [...(task.comments || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) 
+  });
   const [newSubtask, setNewSubtask] = useState("");
   const [doneCollapsed, setDoneCollapsed] = useState(true);
+  const [commentText, setCommentText] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState("");
 
   const addSubtask = () => {
     if (!newSubtask.trim()) return;
@@ -39,6 +48,42 @@ export default function TaskModal({ task, onClose, onSave, onDelete, readOnly })
     }));
 
   const deleteSubtask = (id) => setDraft((d) => ({ ...d, subtasks: d.subtasks.filter((st) => st.id !== id) }));
+
+  const addComment = () => {
+    if (!commentText.trim()) return;
+    const now = new Date().toISOString();
+    const newComment = {
+      id: crypto.randomUUID(),
+      text: commentText,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setDraft((d) => ({ ...d, comments: [newComment, ...(d.comments || [])] }));
+    setCommentText("");
+  };
+
+  const deleteComment = (id) => {
+    if (window.confirm("Delete this comment?")) {
+      setDraft((d) => ({ ...d, comments: (d.comments || []).filter((c) => c.id !== id) }));
+    }
+  };
+
+  const startEditing = (comment) => {
+    setEditingId(comment.id);
+    setEditCommentText(comment.text);
+  };
+
+  const saveEdit = (id) => {
+    const now = new Date().toISOString();
+    setDraft((d) => ({
+      ...d,
+      comments: (d.comments || []).map((c) =>
+        c.id === id ? { ...c, text: editCommentText, updatedAt: now } : c
+      ),
+    }));
+    setEditingId(null);
+    setEditCommentText("");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -255,15 +300,69 @@ export default function TaskModal({ task, onClose, onSave, onDelete, readOnly })
 
           <section className="space-y-2">
             <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-              <EllipsisVertical className="w-3.5 h-3.5" />Notes
+              <MessageSquare className="w-3.5 h-3.5" />Comments
             </label>
-            <textarea
-              placeholder="Reflections, blockers, or reference links..."
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-none px-4 py-4 text-xs text-zinc-600 focus:bg-white focus:border-zinc-900 outline-none min-h-[140px] transition-all font-sans"
-              value={draft.notes || ""}
-              onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-              disabled={readOnly}
-            />
+            <div className={`space-y-3 pr-2 custom-scrollbar ${draft.comments?.length > 3 ? "max-h-[240px] overflow-y-auto" : ""}`}>
+              {draft.comments?.map((comment) => (
+                <div key={comment.id} className="group bg-zinc-50 border border-zinc-100 p-3 transition-all">
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-2 text-[9px] text-zinc-400">
+                      <Clock className="w-3 h-3" />
+                      <span>{new Date(comment.createdAt).toLocaleString()}</span>
+                      {comment.updatedAt !== comment.createdAt && (
+                        <span className="italic">— Edited: {new Date(comment.updatedAt).toLocaleString()}</span>
+                      )}
+                    </div>
+                    {!readOnly && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => startEditing(comment)} className="p-1 text-zinc-400 hover:text-zinc-900">
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                        <button onClick={() => deleteComment(comment.id)} className="p-1 text-zinc-400 hover:text-rose-500">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {editingId === comment.id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        className="w-full bg-white border border-zinc-200 px-2 py-1 text-xs focus:ring-0 outline-none"
+                        value={editCommentText}
+                        onChange={(e) => setEditCommentText(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={() => saveEdit(comment.id)} className="text-[10px] font-bold uppercase text-zinc-600">Save</button>
+                        <button onClick={() => setEditingId(null)} className="text-[10px] font-bold uppercase text-zinc-400">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-zinc-700 whitespace-pre-wrap">{comment.text}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            {!readOnly && (
+              <div className="mt-4 space-y-2">
+                <textarea
+                  placeholder="Write a comment..."
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-none px-4 py-3 text-xs text-zinc-600 focus:bg-white focus:border-zinc-900 outline-none min-h-[80px] transition-all font-sans"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={addComment}
+                    disabled={!commentText.trim()}
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50"
+                  >
+                    <Send className="w-3 h-3" />
+                    Post Comment
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         </div>
 

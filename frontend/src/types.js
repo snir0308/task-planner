@@ -1,4 +1,10 @@
 /**
+ * @typedef {Object} Comment
+ * @property {string} id
+ * @property {string} text
+ * @property {string} createdAt
+ * @property {string} updatedAt
+ *
  * @typedef {Object} Subtask
  * @property {string} id
  * @property {string} title
@@ -17,5 +23,5 @@
  * @property {boolean} isSimple
  * @property {boolean} parkingLot
  * @property {string} [dueDate]
- * @property {string} [notes]
+ * @property {Comment[]} [comments]
  */

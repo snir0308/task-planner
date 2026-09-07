@@ -78,10 +78,10 @@ export default function TaskCard({
           {task.title || "Untitled Task"}
         </h3>
         <div className="flex items-center gap-3 shrink-0">
-          {(task.description || task.notes || task.subtasks.length > 0) && (
+          {(task.description || task.comments?.length > 0 || task.subtasks.length > 0) && (
             <div className="flex items-center gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
               {task.description && <div className="w-1 h-1 bg-zinc-400 rounded-full" title="Has description" />}
-              {task.notes && <div className="w-1 h-1 bg-indigo-400 rounded-full" title="Has notes" />}
+              {task.comments?.length > 0 && <div className="w-1 h-1 bg-indigo-400 rounded-full" title="Has comments" />}
               {task.subtasks.length > 0 && <span className="text-[8px] font-mono text-zinc-400">[{task.subtasks.length}]</span>}
             </div>
           )}

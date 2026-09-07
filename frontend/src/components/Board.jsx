@@ -191,7 +191,6 @@ export default function Board({ readOnly = false }) {
           const due = t.dueDate ? ` (Due: ${t.dueDate})` : "";
           content += `  ${status} ${t.title}${due}\n`;
           if (t.description) content += `      Description: ${t.description}\n`;
-          if (t.notes) content += `      Notes: ${t.notes}\n`;
           if (t.subtasks && t.subtasks.length > 0) {
             t.subtasks.forEach((st) => {
               const stStatus = st.completed ? "[x]" : "[ ]";
@@ -199,6 +198,10 @@ export default function Board({ readOnly = false }) {
               content += `    ${stStatus} ${st.title}${stDue}\n`;
             });
           }
+          if (t.comments && t.comments.length > 0) {
+            content += `      Comments: ${t.comments.length} comments\n`;
+          }
+
         });
       }
       content += `\n`;
