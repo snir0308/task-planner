@@ -18,7 +18,8 @@ export default function Board({ readOnly = false }) {
   const [editingTask, setEditingTask] = useState(null);
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [favoritesOpen, setFavoritesOpen] = useState(false);
+   const [favoritesOpen, setFavoritesOpen] = useState(false);
+   const [favorites, setFavorites] = useState([]);
    const [profileImage, setProfileImage] = useState("");
    const [displayName, setDisplayName] = useState("");
    const [purposeStatement, setPurposeStatement] = useState("");
@@ -29,19 +30,21 @@ export default function Board({ readOnly = false }) {
    // Load initial data
    useEffect(() => {
      const loadData = async () => {
-       const [loadedTasks, loadedProfile, loadedDisplayName, loadedPurpose, loadedBackup] = await Promise.all([
-         boardService.getTasks(),
-         boardService.getProfileImage(),
-         boardService.getDisplayName(),
-         boardService.getPurposeStatement(),
-         boardService.getLastBackup(),
-       ]);
-       setTasks(loadedTasks);
-       setProfileImage(loadedProfile);
-       setDisplayName(loadedDisplayName);
-       setPurposeStatement(loadedPurpose);
-       setLastBackup(loadedBackup);
-       setIsLoaded(true);
+      const [loadedTasks, loadedProfile, loadedDisplayName, loadedPurpose, loadedBackup, loadedFavorites] = await Promise.all([
+          boardService.getTasks(),
+          boardService.getProfileImage(),
+          boardService.getDisplayName(),
+          boardService.getPurposeStatement(),
+          boardService.getLastBackup(),
+          boardService.getFavorites(),
+        ]);
+        setTasks(loadedTasks);
+        setProfileImage(loadedProfile);
+        setDisplayName(loadedDisplayName);
+        setPurposeStatement(loadedPurpose);
+        setLastBackup(loadedBackup);
+        setFavorites(loadedFavorites);
+        setIsLoaded(true);
      };
      loadData();
    }, [boardService]);
@@ -295,14 +298,14 @@ export default function Board({ readOnly = false }) {
           </div >
           {!readOnly && (
             <>
-              <button
-                onClick={() => setFavoritesOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 border text-[10px] bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-all"
-                title="Open Favorites"
-              >
-                <Star className="w-3.5 h-3.5" />
-                Favorites
-              </button>
+               <button
+                 onClick={() => setFavoritesOpen(true)}
+                 className="flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-all"
+                 title="Open Favorites"
+               >
+                  <Star className={`w-3.5 h-3.5 ${favorites.length > 0 ? "text-yellow-500" : ""}`} />
+                 FAVORITES
+               </button>
               <button
                 onClick={downloadBackup}
                 className={`flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest transition-all ${backupInfo.isOverdue ? "bg-rose-50 border-rose-300 text-rose-600 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-100/50" : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900"}`}
