@@ -17,28 +17,34 @@ export default function Board({ readOnly = false }) {
   const [editingTask, setEditingTask] = useState(null);
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [profileImage, setProfileImage] = useState("");
-  const [purposeStatement, setPurposeStatement] = useState("");
-  const [lastBackup, setLastBackup] = useState(null);
+   const [profileImage, setProfileImage] = useState("");
+   const [displayName, setDisplayName] = useState("");
+   const [purposeStatement, setPurposeStatement] = useState("");
+   const [lastBackup, setLastBackup] = useState(null);
+
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load initial data
-  useEffect(() => {
-    const loadData = async () => {
-      const [loadedTasks, loadedProfile, loadedPurpose, loadedBackup] = await Promise.all([
-        boardService.getTasks(),
-        boardService.getProfileImage(),
-        boardService.getPurposeStatement(),
-        boardService.getLastBackup(),
-      ]);
-      setTasks(loadedTasks);
-      setProfileImage(loadedProfile);
-      setPurposeStatement(loadedPurpose);
-      setLastBackup(loadedBackup);
-      setIsLoaded(true);
-    };
-    loadData();
-  }, [boardService]);
+   // Load initial data
+   useEffect(() => {
+     const loadData = async () => {
+       const [loadedTasks, loadedProfile, loadedDisplayName, loadedPurpose, loadedBackup] = await Promise.all([
+         boardService.getTasks(),
+         boardService.getProfileImage(),
+         boardService.getDisplayName(),
+         boardService.getPurposeStatement(),
+         boardService.getLastBackup(),
+       ]);
+       setTasks(loadedTasks);
+       setProfileImage(loadedProfile);
+       setDisplayName(loadedDisplayName);
+       setPurposeStatement(loadedPurpose);
+       setLastBackup(loadedBackup);
+       setIsLoaded(true);
+     };
+     loadData();
+   }, [boardService]);
+
+ 
 
   // Save tasks when they change
   useEffect(() => {
@@ -232,55 +238,53 @@ export default function Board({ readOnly = false }) {
     URL.revokeObjectURL(url);
   };
 
-  const saveProfile = async (imageUrl, purpose) => {
+  const saveProfile = async (displayName, imageUrl, purpose) => {
+    await boardService.setDisplayName(displayName);
     await boardService.setProfileImage(imageUrl);
     await boardService.setPurposeStatement(purpose);
+    setDisplayName(displayName);
     setProfileImage(imageUrl);
     setPurposeStatement(purpose);
   };
+ 
 
   return (
     <div className="h-[calc(100vh-16px)] max-h-[calc(100vh-16px)] bg-zinc-50 text-zinc-900 font-sans flex flex-col overflow-hidden">
       <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-zinc-200 shrink-0">
         <div className="flex items-center gap-3.5">
-          {!readOnly && (
-            <button
-              onClick={() => setProfileOpen(true)}
-              className="relative group w-10 h-10 rounded-full border border-zinc-300 hover:border-zinc-950 bg-zinc-100 flex items-center justify-center overflow-hidden transition-all shadow-xs shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-1"
-              title="Click to view & edit Profile Photo and Purpose Statement"
-            >
-              {profileImage ? (
-                <img
-                  src={profileImage}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => { e.target.style.display = "none"; }}
-                />
-              ) : (
-                <div className="w-full h-full bg-zinc-900 text-white flex items-center justify-center">
-                  <User className="w-5 h-5 text-zinc-200" />
-                </div >
-              )}
+          <button
+            onClick={() => setProfileOpen(true)}
+            className={`relative group w-10 h-10 rounded-full border border-zinc-300 bg-zinc-100 flex items-center justify-center overflow-hidden transition-all shadow-xs shrink-0 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-1 ${readOnly ? "cursor-default" : "hover:border-zinc-950 cursor-pointer"}`}
+            title={readOnly ? "Click to view Profile" : "Click to view & edit Profile Photo and Purpose Statement"}
+          >
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt="Profile"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
+            ) : (
+              <div className="w-full h-full bg-zinc-900 text-white flex items-center justify-center">
+                <User className="w-5 h-5 text-zinc-200" />
+              </div >
+            )}
+            {!readOnly && (
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                 <Camera className="w-4 h-4" />
               </div >
-            </button>
-          )}
-          <div onClick={() => !readOnly && setProfileOpen(true)} className="cursor-pointer group/title">
+            )}
+          </button>
+          <div onClick={() => setProfileOpen(true)} className="cursor-pointer group/title">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-zinc-900 leading-none group-hover/title:text-zinc-700 transition-colors">2x2</h1>
-              {purposeStatement && (
-                <span
-                  className="hidden xl:inline-block max-w-[260px] text-[11px] font-medium text-zinc-500 truncate border-l border-zinc-200 pl-2 leading-tight italic"
-                  title={`Purpose: ${purposeStatement}`}
-                >
-                  “{purposeStatement}”
-                </span>
+              {displayName && (
+                <span className="text-sm font-medium text-zinc-500 ml-2">| {displayName}</span>
               )}
-            </div>
+            </div >
             <p className="text-[10px] font-sans text-zinc-400 uppercase tracking-widest mt-0.5 font-semibold">task planner</p>
-          </div>
+          </div >
         </div>
         
         <div className="flex items-center gap-6">
@@ -337,22 +341,22 @@ export default function Board({ readOnly = false }) {
                onAddTask={readOnly ? undefined : () => createTask(quadrant.id)}
                onEditTask={(task) => { setEditingTask(task); setTaskModalOpen(true); }}
                onToggleStatus={toggleTaskStatus}
+ 
 
-
-              onMoveTask={moveTask}
-              onDelete={deleteTask}
-              readOnly={readOnly}
-              draggedTaskId={draggedTaskId}
-              setDraggedTaskId={setDraggedTaskId}
-              dragOverCardId={dragOverCardId}
-              setDragOverCardId={setDragOverCardId}
-              dragOverPosition={dragOverPosition}
-              setDragOverPosition={setDragOverPosition}
-              dragOverQuadrantId={dragOverQuadrantId}
-              setDragOverQuadrantId={setDragOverQuadrantId}
-              onReorderTask={reorderTask}
-              onDropQuadrant={dropOnQuadrant}
-              setHoveredTaskId={setHoveredTaskId}
+               onMoveTask={moveTask}
+               onDelete={deleteTask}
+               readOnly={readOnly}
+               draggedTaskId={draggedTaskId}
+               setDraggedTaskId={setDraggedTaskId}
+               dragOverCardId={dragOverCardId}
+               setDragOverCardId={setDragOverCardId}
+               dragOverPosition={dragOverPosition}
+               setDragOverPosition={setDragOverPosition}
+               dragOverQuadrantId={dragOverQuadrantId}
+               setDragOverQuadrantId={setDragOverQuadrantId}
+               onReorderTask={reorderTask}
+               onDropQuadrant={dropOnQuadrant}
+               setHoveredTaskId={setHoveredTaskId}
             />
           ))}
         </div
@@ -370,24 +374,27 @@ export default function Board({ readOnly = false }) {
              readOnly={readOnly}
            />
          )}
-         {!readOnly && (
-           <>
-             {cleanupOpen && (
-               <CleanupModal
-                 tasks={tasks}
-                 onClose={() => { setCleanupOpen(false); }}
-                 onDeleteAll={removeAllCompletedSubtasks}
-                 onDeleteSubtask={deleteSubtask}
-                 onDeleteParentDoneSubtasks={clearParentCompleted}
-               />
-             )}
-             {profileOpen && (
-               <ProfileModal initialImageUrl={profileImage} initialPurpose={purposeStatement} onClose={() => setProfileOpen(false)} onSave={saveProfile} />
-             )}
-           </>
+         {!readOnly && cleanupOpen && (
+           <CleanupModal
+             tasks={tasks}
+             onClose={() => { setCleanupOpen(false); }}
+             onDeleteAll={removeAllCompletedSubtasks}
+             onDeleteSubtask={deleteSubtask}
+             onDeleteParentDoneSubtasks={clearParentCompleted}
+           />
+         )}
+         {profileOpen && (
+           <ProfileModal 
+             initialImageUrl={profileImage} 
+             initialDisplayName={displayName} 
+             initialPurpose={purposeStatement} 
+             onClose={() => setProfileOpen(false)} 
+             onSave={saveProfile} 
+             readOnly={readOnly}
+           />
          )}
        </AnimatePresence>
 
-    </div >
-  );
+     </div >
+   );
 }

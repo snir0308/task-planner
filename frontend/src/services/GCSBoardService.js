@@ -103,16 +103,34 @@ export class GCSBoardService extends BoardService {
   /**
    * @param {string} statement
    */
-  async setPurposeStatement(statement) {
-    const board = await this._fetchBoard();
-    board.purposeStatement = statement;
-    await this._saveBoard(board);
-  }
+   async setPurposeStatement(statement) {
+     const board = await this._fetchBoard();
+     board.purposeStatement = statement;
+     await this._saveBoard(board);
+   }
 
-  /**
-   * @returns {Promise<string|null>}
-   */
-  async getLastBackup() {
+   /**
+    * @returns {Promise<string>}
+    */
+   async getDisplayName() {
+     const board = await this._fetchBoard();
+     return board.displayName || "";
+   }
+
+   /**
+    * @param {string} name
+    */
+   async setDisplayName(name) {
+     const board = await this._fetchBoard();
+     board.displayName = name;
+     await this._saveBoard(board);
+   }
+
+   /**
+    * @returns {Promise<string|null>}
+    */
+   async getLastBackup() {
+
     const board = await this._fetchBoard();
     return board.lastBackup || null;
   }

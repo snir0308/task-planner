@@ -7,59 +7,113 @@ import { BoardService } from "./BoardService.js";
  */
 export class LocalStorageBoardService extends BoardService {
   /**
+   * @private
+   * @returns {Promise<Object>} The complete board state from localStorage.
+   */
+  async _getBoardState() {
+    const stored = localStorage.getItem("matrix-board-state");
+    return stored ? JSON.parse(stored) : {
+      tasks: [],
+      profileImage: "",
+       purposeStatement: "",
+       displayName: "",
+       lastBackup: null
+     };
+
+  }
+
+  /**
+   * @private
+   * @param {Object} board - The board object to save.
+   * @returns {Promise<void>}
+   */
+  async _saveBoardState(board) {
+    localStorage.setItem("matrix-board-state", JSON.stringify(board));
+  }
+
+  /**
    * @returns {Promise<Array<Object>>}
    */
   async getTasks() {
-    const stored = localStorage.getItem("matrix-tasks");
-    return stored ? JSON.parse(stored) : [];
+    const board = await this._getBoardState();
+    return board.tasks || [];
   }
 
   /**
    * @param {Array<Object>} tasks
    */
   async setTasks(tasks) {
-    localStorage.setItem("matrix-tasks", JSON.stringify(tasks));
+    const board = await this._getBoardState();
+    board.tasks = tasks;
+    await this._saveBoardState(board);
   }
 
   /**
    * @returns {Promise<string>}
    */
   async getProfileImage() {
-    return localStorage.getItem("matrix-profile-image") || "";
+    const board = await this._getBoardState();
+    return board.profileImage || "";
   }
 
   /**
    * @param {string} url
    */
   async setProfileImage(url) {
-    localStorage.setItem("matrix-profile-image", url);
+    const board = await this._getBoardState();
+    board.profileImage = url;
+    await this._saveBoardState(board);
   }
 
   /**
    * @returns {Promise<string>}
    */
   async getPurposeStatement() {
-    return localStorage.getItem("matrix-purpose-statement") || "";
+    const board = await this._getBoardState();
+    return board.purposeStatement || "";
   }
 
   /**
    * @param {string} statement
    */
-  async setPurposeStatement(statement) {
-    localStorage.setItem("matrix-purpose-statement", statement);
-  }
+   async setPurposeStatement(statement) {
+     const board = await this._getBoardState();
+     board.purposeStatement = statement;
+     await this._saveBoardState(board);
+   }
 
-  /**
-   * @returns {Promise<string|null>}
-   */
-  async getLastBackup() {
-    return localStorage.getItem("matrix-last-backup");
+   /**
+    * @returns {Promise<string>}
+    */
+   async getDisplayName() {
+     const board = await this._getBoardState();
+     return board.displayName || "";
+   }
+
+   /**
+    * @param {string} name
+    */
+   async setDisplayName(name) {
+     const board = await this._getBoardState();
+     board.displayName = name;
+     await this._saveBoardState(board);
+   }
+
+   /**
+    * @returns {Promise<string|null>}
+    */
+   async getLastBackup() {
+
+    const board = await this._getBoardState();
+    return board.lastBackup || null;
   }
 
   /**
    * @param {string} timestamp
    */
   async setLastBackup(timestamp) {
-    localStorage.setItem("matrix-last-backup", timestamp);
+    const board = await this._getBoardState();
+    board.lastBackup = timestamp;
+    await this._saveBoardState(board);
   }
 }

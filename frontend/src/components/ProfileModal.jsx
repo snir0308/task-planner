@@ -2,9 +2,10 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Image, Pen, User, X } from "lucide-react";
 
-export default function ProfileModal({ initialImageUrl, initialPurpose, onClose, onSave }) {
+export default function ProfileModal({ initialImageUrl, initialDisplayName, initialPurpose, onClose, onSave, readOnly = false }) {
   const [isEditing, setIsEditing] = useState(false);
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const [displayName, setDisplayName] = useState(initialDisplayName);
   const [purpose, setPurpose] = useState(initialPurpose);
   const [imageError, setImageError] = useState(false);
 
@@ -12,12 +13,13 @@ export default function ProfileModal({ initialImageUrl, initialPurpose, onClose,
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(imageUrl.trim(), purpose.trim());
+    onSave(displayName.trim(), imageUrl.trim(), purpose.trim());
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setImageUrl(initialImageUrl);
+    setDisplayName(initialDisplayName);
     setPurpose(initialPurpose);
     setImageError(false);
     setIsEditing(false);
@@ -53,7 +55,7 @@ export default function ProfileModal({ initialImageUrl, initialPurpose, onClose,
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!isEditing && (
+            {!isEditing && !readOnly && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-zinc-500 hover:text-zinc-900 border border-zinc-200 hover:border-zinc-400 bg-white transition-colors cursor-pointer"
@@ -128,23 +130,36 @@ export default function ProfileModal({ initialImageUrl, initialPurpose, onClose,
                   </div>
                 </div>
               </div>
-              <div className="space-y-2 pt-2 border-t border-zinc-100">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700">Purpose Statement</label>
-                  <span className="text-[10px] text-zinc-400 font-mono">{purpose.length} characters</span>
-                </div>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  Your guiding North Star or mission to keep you focused on what truly matters most each day.
-                </p>
-                <textarea
-                  value={purpose}
-                  onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="e.g. Focus on high-leverage initiatives, eliminate reactive distractions, and build long-term value."
-                  rows={4}
-                  className="w-full p-3 text-xs border border-zinc-300 focus:border-zinc-900 focus:outline-none bg-white text-zinc-900 leading-relaxed placeholder:text-zinc-400 resize-y transition-colors font-sans"
-                />
-              </div>
-            </div>
+               <div className="space-y-3 pt-2 border-t border-zinc-100">
+                 <div className="space-y-1.5">
+                   <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700">Display Name</label>
+                   <input
+                     type="text"
+                     value={displayName}
+                     onChange={(e) => setDisplayName(e.target.value)}
+                     placeholder="Enter your display name"
+                     className="w-full px-3 py-2 text-xs border border-zinc-300 focus:border-zinc-900 focus:outline-none bg-white text-zinc-900 transition-colors placeholder:text-zinc-400"
+                   />
+                 </div>
+                 <div className="space-y-1.5">
+                   <div className="flex items-center justify-between">
+                     <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700">Purpose Statement</label>
+                     <span className="text-[10px] text-zinc-400 font-mono">{purpose.length} characters</span>
+                   </div>
+                 </div>
+                 <p className="text-[11px] text-zinc-500 leading-relaxed">
+                   Your guiding North Star or mission to keep you focused on what truly matters most each day.
+                 </p>
+                 <textarea
+                   value={purpose}
+                   onChange={(e) => setPurpose(e.target.value)}
+                   placeholder="e.g. Focus on high-leverage initiatives, eliminate reactive distractions, and build long-term value."
+                   rows={4}
+                   className="w-full p-3 text-xs border border-zinc-300 focus:border-zinc-900 focus:outline-none bg-white text-zinc-900 leading-relaxed placeholder:text-zinc-400 resize-y transition-colors font-sans"
+                 />
+               </div>
+             </div>
+
             <div className="p-4 border-t border-zinc-100 bg-zinc-50/50 flex items-center justify-between shrink-0">
               <button type="button" onClick={handleCancel} className="px-4 py-2 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider hover:bg-zinc-100 transition-colors">
                 Cancel
@@ -185,13 +200,15 @@ export default function ProfileModal({ initialImageUrl, initialPurpose, onClose,
               <button type="button" onClick={onClose} className="px-4 py-2 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase tracking-wider hover:bg-zinc-100 transition-colors">
                 Close
               </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 border border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:border-zinc-400 bg-white text-xs font-medium uppercase tracking-wider transition-colors shadow-2xs"
-              >
-                <Pen className="w-3.5 h-3.5 text-zinc-400" />Edit Profile
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 border border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:border-zinc-400 bg-white text-xs font-medium uppercase tracking-wider transition-colors shadow-2xs"
+                >
+                  <Pen className="w-3.5 h-3.5 text-zinc-400" />Edit Profile
+                </button>
+              )}
             </div>
           </div>
         )}

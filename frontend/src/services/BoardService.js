@@ -72,4 +72,21 @@ export class BoardService {
   async setLastBackup(timestamp) {
     throw new Error("Method 'setLastBackup()' must be implemented.");
   }
+
+  /**
+   * Retrieves the user's display name.
+   * @returns {Promise<string>} A promise that resolves to the display name.
+   */
+  async getDisplayName() {
+    throw new Error("Method 'getDisplayName()' must be implemented.");
+  }
+
+  /**
+   * Sets the user's display name.
+   * @param {string} name - The new display name.
+   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   */
+  async setDisplayName(name) {
+    throw new Error("Method 'setDisplayName()' must be implemented.");
+  }
 }
