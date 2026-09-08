@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, Lock, ArrowRight } from 'lucide-react';
+import { useBoardService } from '../context/BoardServiceContext.jsx';
 
 const RegistrationPage = () => {
   const [editToken, setEditToken] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
   const navigate = useNavigate();
+  const boardService = useBoardService();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, we would validate and potentially save the registration info here.
-    // For now, we just navigate to the board.
-    navigate('/edit');
+    setIsRegistering(true);
+    try {
+      const boardId = await boardService.register(editToken);
+      navigate(`/edit/${boardId}`);
+    } catch (error) {
+      console.error('Registration failed:', error);
+      alert('Registration failed. Please try again.');
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   return (
@@ -37,7 +47,8 @@ const RegistrationPage = () => {
                 <input
                   type="password"
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-zinc-200 rounded-xl text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:border-transparent transition-all bg-zinc-50/50"
+                  disabled={isRegistering}
+                  className="block w-full pl-10 pr-3 py-3 border border-zinc-200 rounded-xl text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:border-transparent transition-all bg-zinc-50/50 disabled:opacity-50"
                   placeholder="Enter your secret token"
                   value={editToken}
                   onChange={(e) => setEditToken(e.target.value)}
@@ -49,10 +60,11 @@ const RegistrationPage = () => {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-zinc-900 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-950 transition-all shadow-md"
+              disabled={isRegistering}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-zinc-900 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-950 transition-all shadow-md disabled:opacity-50"
             >
-              Get Started
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              {isRegistering ? 'Registering...' : 'Get Started'}
+              {!isRegistering && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
             </button>
           </div>
         </form>
@@ -62,3 +74,4 @@ const RegistrationPage = () => {
 };
 
 export default RegistrationPage;
+

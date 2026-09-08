@@ -12,14 +12,27 @@ export class LocalStorageBoardService extends BoardService {
    */
   async _getBoardState() {
     const stored = localStorage.getItem("matrix-board-state");
-    return stored ? JSON.parse(stored) : {
-      tasks: [],
-      profileImage: "",
-      purposeStatement: "",
-      displayName: "",
-      lastBackup: null,
-      favorites: []
-    };
+     return stored ? JSON.parse(stored) : {
+       tasks: [],
+       profileImage: "",
+       purposeStatement: "",
+       displayName: "",
+       lastBackup: null,
+       favorites: [],
+       editToken: "",
+       boardId: ""
+     };
+
+  }
+
+  /**
+   * Retrieves the board state for a given board ID.
+   * @param {string} boardId - The ID of the board.
+   * @returns {Promise<Object|null>} A promise that resolves to the board state, or null if not found.
+   */
+  async getBoardState(boardId) {
+    const board = await this._getBoardState();
+    return board.boardId === boardId ? board : null;
   }
 
   /**
@@ -149,10 +162,38 @@ export class LocalStorageBoardService extends BoardService {
   /**
    * @param {string} id
    */
+  /**
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
   async deleteFavorite(id) {
     const board = await this._getBoardState();
     board.favorites = (board.favorites || []).filter((f) => f.id !== id);
     await this._saveBoardState(board);
+  }
+
+  /**
+   * Registers a new board with an edit token.
+   * @param {string} editToken - The edit token to register.
+   * @returns {Promise<string>} The new board ID.
+   */
+  async register(editToken) {
+    const board = await this._getBoardState();
+    board.editToken = editToken;
+    board.boardId = crypto.randomUUID();
+    await this._saveBoardState(board);
+    return board.boardId;
+  }
+
+  /**
+   * Validates an edit token for a given board.
+   * @param {string} boardId - The ID of the board.
+   * @param {string} editToken - The edit token to validate.
+   * @returns {Promise<boolean>}
+   */
+  async validateEditToken(boardId, editToken) {
+    const board = await this._getBoardState();
+    return board.boardId === boardId && board.editToken === editToken;
   }
 }
 

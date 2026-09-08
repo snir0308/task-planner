@@ -24,4 +24,14 @@
  * @property {boolean} parkingLot
  * @property {string} [dueDate]
  * @property {Comment[]} [comments]
+ *
+ * @typedef {Object} Board
+ * @property {Task[]} tasks
+ * @property {string} profileImage
+ * @property {string} purposeStatement
+ * @property {string} displayName
+ * @property {string|null} lastBackup
+ * @property {Object[]} favorites
+ * @property {string} editToken
+ * @property {string} boardId
  */

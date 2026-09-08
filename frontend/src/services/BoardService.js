@@ -121,11 +121,30 @@ export class BoardService {
   }
 
   /**
-   * Deletes a favorite.
-   * @param {string} id - The ID of the favorite to delete.
-   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   * Registers a new board with an edit token.
+   * @param {string} editToken - The edit token to register.
+   * @returns {Promise<string>} The new board ID.
    */
-  async deleteFavorite(id) {
-    throw new Error("Method 'deleteFavorite()' must be implemented.");
+  async register(editToken) {
+    throw new Error("Method 'register()' must be implemented.");
+  }
+
+  /**
+   * Retrieves the board state for a given board ID.
+   * @param {string} boardId - The ID of the board.
+   * @returns {Promise<Object>} A promise that resolves to the board state.
+   */
+  async getBoardState(boardId) {
+    throw new Error("Method 'getBoardState()' must be implemented.");
+  }
+
+  /**
+   * Validates an edit token for a given board.
+   * @param {string} boardId - The ID of the board.
+   * @param {string} editToken - The edit token to validate.
+   * @returns {Promise<boolean>} A promise that resolves to true if the token is valid, false otherwise.
+   */
+  async validateEditToken(boardId, editToken) {
+    throw new Error("Method 'validateEditToken()' must be implemented.");
   }
 }
