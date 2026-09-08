@@ -173,87 +173,68 @@ export default function Board({ readOnly = false, boardId }) {
   };
 
   const downloadBackup = async () => {
-    const data = JSON.stringify(tasks, null, 2);
+    const board = await boardService.getBoardState(boardId);
+    if (!board) return;
+
+    // Strip the encryptedEditToken and id from the JSON before download
+    const { encryptedEditToken: _encryptedEditToken, id: _id, ...cleanBoard } = board;
+
+    const data = JSON.stringify(cleanBoard, null, 2);
     const href = "data:text/json;charset=utf-8," + encodeURIComponent(data);
     const link = document.createElement("a");
     link.setAttribute("href", href);
-    link.setAttribute("download", "matrix-tasks-raw.json");
+    link.setAttribute("download", `matrix-board-backup-${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+
     const now = new Date().toISOString();
     await boardService.setLastBackup(now);
     setLastBackup(now);
   };
 
-  const exportTasks = () => {
-    let content = "";
-    const dateStr = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-    content += `2x2 TASK PLANNER EXPORT - ${dateStr}\n`;
-    content += `==========================================\n\n`;
-    QUADRANT_CONFIG.forEach((quadrant) => {
-      const qTasks = tasks.filter((t) => !t.isSimple && !t.parkingLot && t.quadrantId === quadrant.id);
-      content += `${quadrant.title.toUpperCase()} (${quadrant.subtitle})\n`;
-      content += `${"-".repeat(quadrant.title.length + 3 + quadrant.subtitle.length)}\n`;
-      if (qTasks.length === 0) {
-        content += `  (No tasks)\n`;
-      } else {
-        qTasks.forEach((t) => {
-          const status = t.completed ? "[x]" : "[ ]";
-          const due = t.dueDate ? ` (Due: ${t.dueDate})` : "";
-          content += `  ${status} ${t.title}${due}\n`;
-          if (t.description) content += `      Description: ${t.description}\n`;
-          if (t.subtasks && t.subtasks.length > 0) {
-            t.subtasks.forEach((st) => {
-              const stStatus = st.completed ? "[x]" : "[ ]";
-              const stDue = st.dueDate ? ` (Due: ${st.dueDate})` : "";
-              content += `    ${stStatus} ${st.title}${stDue}\n`;
-            });
-          }
-          if (t.comments && t.comments.length > 0) {
-            content += `      Comments: ${t.comments.length} comments\n`;
+  const importTasks = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const importedBoard = JSON.parse(event.target.result);
+          const currentBoard = await boardService.getBoardState(boardId);
+          if (!currentBoard || !currentBoard.encryptedEditToken) {
+            throw new Error("Could not retrieve current board state or encryptedEditToken.");
           }
 
-        });
-      }
-      content += `\n`;
-    });
+const newBoardData = {
+  ...importedBoard,
+  encryptedEditToken: currentBoard.encryptedEditToken,
+  id: currentBoard.id,
+};
 
-    const support = tasks.filter((t) => t.supportNeeded);
-    content += `SUPPORT NEEDED\n`;
-    content += `==============\n`;
-    if (support.length === 0) {
-      content += `  (No support needed items)\n`;
-    } else {
-      support.forEach((t) => {
-        const status = t.completed ? "[x]" : "[ ]";
-        content += `  ${status} ${t.title}\n`;
-      });
-    }
-    content += `\n`;
+          await boardService.setBoardState(newBoardData);
 
-    const parking = tasks.filter((t) => t.parkingLot);
-    content += `PARKING LOT\n`;
-    content += `===========\n`;
-    if (parking.length === 0) {
-      content += `  (No parking lot items)\n`;
-    } else {
-      parking.forEach((t) => {
-        const status = t.completed ? "[x]" : "[ ]";
-        content += `  ${status} ${t.title}\n`;
-      });
-    }
-    content += `\n`;
-
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `2x2-tasks-export-${new Date().toISOString().slice(0, 10)}.txt`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+          // Update local state
+          setTasks(newBoardData.tasks || []);
+          setProfileImage(newBoardData.profileImage || "");
+          setDisplayName(newBoardData.displayName || "");
+          setPurposeStatement(newBoardData.purposeStatement || "");
+          setFavorites(newBoardData.favorites || []);
+          
+          alert("Board imported successfully!");
+        } catch (err) {
+          console.error(err);
+          alert("Failed to import board: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+      input.click();
+    };
+    input.click();
   };
 
   const saveProfile = async (displayName, imageUrl, purpose) => {
@@ -311,49 +292,37 @@ export default function Board({ readOnly = false, boardId }) {
             <span className="text-xs font-sans text-zinc-600 font-bold tracking-tight">{tasks.length} active tasks</span
             >
           </div >
+          
           {!readOnly && (
             <>
-               <button
-                 onClick={() => setFavoritesOpen(true)}
-                 className="flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-all"
-                 title="Open Favorites"
-               >
-                  <Star className={`w-3.5 h-3.5 ${favorites.length > 0 ? "text-yellow-500" : ""}`} />
-                 FAVORITES
-               </button>
-             <button
-               onClick={downloadBackup}
-               className={`flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest transition-all ${backupInfo.isOverdue ? "bg-rose-50 border-rose-300 text-rose-600 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-100/50" : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900"}`}
-               title={backupInfo.text}
-             >
-               <Download className={`w-3.5 h-3.5 ${backupInfo.isOverdue ? "text-rose-500" : ""}`} />
-               Download Backup
-             </button>
-             <button
-               onClick={() => setCleanupOpen(true)}
-               className="flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest transition-all bg-white border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900"
-               title="Clean up completed subtasks to optimize storage"
-             >
-               <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
-               Clean Up
-               {doneSubtaskCount > 0 && (
-                 <span className="ml-1 px-1.5 py-0.5 text-[9px] bg-rose-100 text-rose-700 rounded-full font-sans font-bold leading-none">
-                   {doneSubtaskCount}
-                 </span
-                 >
-               )}
-             </button>
-             <button
-               onClick={exportTasks}
-               className="flex items-center gap-2 px-4 py-2 border text-[10px] bg-black border-black text-white font-bold uppercase tracking-widest transition-all hover:bg-zinc-800 hover:border-zinc-800"
-               title="Export Tasks to Indented Text File"
-             >
-               <FileText className="w-3.5 h-3.5" />
-               Export
-             </button>
-           </>
-         )}
-       </div >
+              <button
+                onClick={() => setFavoritesOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest bg-black border-black text-white hover:bg-zinc-800 hover:border-zinc-800 transition-all"
+                title="Open Favorites"
+              >
+                <Star className={`w-3.5 h-3.5 ${favorites.length > 0 ? "text-yellow-500" : ""}`} />
+                FAVORITES
+              </button>
+              <button
+                onClick={importTasks}
+                className="flex items-center gap-2 px-4 py-2 border text-[10px] bg-black border-black text-white font-bold uppercase tracking-widest transition-all hover:bg-zinc-800 hover:border-zinc-800"
+                title="Import Board JSON"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Import
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={downloadBackup}
+            className="flex items-center gap-2 px-4 py-2 border text-[10px] font-bold uppercase tracking-widest bg-black border-black text-white hover:bg-zinc-800 hover:border-zinc-800 transition-all"
+            title={backupInfo.text}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Download Backup
+          </button>
+        </div>
      </header>
 
      <main className="flex-1 p-6 flex flex-col lg:flex-row gap-6 overflow-hidden">

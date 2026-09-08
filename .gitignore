@@ -9,3 +9,4 @@ frontend/dist/
 client-message.md
 opencode.json
 README_CICD.md
+backend/storage/local_files

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Star, X, Plus, ExternalLink, Trash2 } from "lucide-react";
+import { Star, X, Plus, ExternalLink, Trash2, Pencil, Check, Ban } from "lucide-react";
 import { useBoardService } from "../context/BoardServiceContext.jsx";
 
 export default function FavoritesModal({ isOpen, onClose }) {
@@ -8,6 +8,9 @@ export default function FavoritesModal({ isOpen, onClose }) {
   const [favorites, setFavorites] = useState([]);
   const [newUrl, setNewUrl] = useState("");
   const [newText, setNewText] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editUrl, setEditUrl] = useState("");
+  const [editText, setEditText] = useState("");
 
   const loadFavorites = useCallback(async () => {
     const favs = await boardService.getFavorites();
@@ -40,8 +43,40 @@ export default function FavoritesModal({ isOpen, onClose }) {
   };
 
   const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this favorite?")) return;
     await boardService.deleteFavorite(id);
     await loadFavorites();
+  };
+
+  const handleEditSubmit = async (id) => {
+    if (!editUrl.trim() || !editText.trim()) return;
+    
+    let formattedUrl = editUrl.trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+
+    await boardService.editFavorite(id, {
+      url: formattedUrl,
+      text: editText.trim()
+    });
+
+    setEditingId(null);
+    setEditUrl("");
+    setEditText("");
+    await loadFavorites();
+  };
+
+  const startEditing = (fav) => {
+    setEditingId(fav.id);
+    setEditUrl(fav.url);
+    setEditText(fav.text);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditUrl("");
+    setEditText("");
   };
 
   const handleTileClick = (url) => {
@@ -123,26 +158,74 @@ export default function FavoritesModal({ isOpen, onClose }) {
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {favorites.map((fav) => (
-                    <div
-                      key={fav.id}
-                      className="group relative flex items-center justify-between p-3 border border-zinc-200 bg-white hover:border-zinc-900 transition-all cursor-pointer"
-                      onClick={() => handleTileClick(fav.url)}
-                    >
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <ExternalLink className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                        <span className="text-xs font-bold text-zinc-700 truncate">{fav.text}</span >
-                      </div >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(fav.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-500 transition-all"
+                    editingId === fav.id ? (
+                      <div
+                        key={fav.id}
+                        className="flex flex-col gap-2 p-3 border border-zinc-900 bg-white"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div >
+                        <input
+                          type="text"
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-none px-3 py-1.5 text-xs outline-none focus:border-zinc-900"
+                          value={editUrl}
+                          onChange={(e) => setEditUrl(e.target.value)}
+                          placeholder="URL"
+                        />
+                        <input
+                          type="text"
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-none px-3 py-1.5 text-xs outline-none focus:border-zinc-900"
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          placeholder="Text"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={cancelEdit}
+                            className="p-1.5 text-zinc-400 hover:text-zinc-600 transition-colors"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditSubmit(fav.id)}
+                            className="p-1.5 text-zinc-400 hover:text-emerald-500 transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        key={fav.id}
+                        className="group relative flex items-center justify-between p-3 border border-zinc-200 bg-white hover:border-zinc-900 transition-all cursor-pointer"
+                        onClick={() => handleTileClick(fav.url)}
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <ExternalLink className="w-3..5 text-zinc-400 shrink-0" />
+                          <span className="text-xs font-bold text-zinc-700 truncate">{fav.text}</span>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditing(fav);
+                            }}
+                            className="p-1 text-zinc-400 hover:text-zinc-900 transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(fav.id);
+                            }}
+                            className="p-1 text-zinc-400 hover:text-rose-500 transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )
                   ))}
+
                 </div >
               )}
             </section>

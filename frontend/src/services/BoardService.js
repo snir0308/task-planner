@@ -121,12 +121,40 @@ export class BoardService {
   }
 
   /**
+   * Deletes a favorite.
+   * @param {string} id - The ID of the favorite to delete.
+   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   */
+  async deleteFavorite(id) {
+    throw new Error("Method 'deleteFavorite()' must be implemented.");
+  }
+
+  /**
+   * Edits an existing favorite.
+   * @param {string} id - The ID of the favorite to edit.
+   * @param {Omit<Favorite, 'id'>} favoriteData - The new data for the favorite.
+   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   */
+  async editFavorite(id, favoriteData) {
+    throw new Error("Method 'editFavorite()' must be implemented.");
+  }
+
+  /**
    * Registers a new board with an edit token.
    * @param {string} editToken - The edit token to register.
    * @returns {Promise<string>} The new board ID.
    */
   async register(editToken) {
     throw new Error("Method 'register()' must be implemented.");
+  }
+
+  /**
+   * Sets the entire board state.
+   * @param {Object} boardData - The new board state.
+   * @returns {Promise<void>} A promise that resolves when the update is complete.
+   */
+  async setBoardState(boardData) {
+    throw new Error("Method 'setBoardState()' must be implemented.");
   }
 
   /**

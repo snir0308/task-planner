@@ -1,111 +1,99 @@
-const { Storage } = require('@google-cloud/storage');
-const bcrypt = require('bcrypt');
+const functions = require('@google-cloud/functions-framework');
+const LocalStorage = require('./storage/LocalStorage');
+const BackendServiceImpl = require('./services/BackendServiceImpl');
+const { 
+  AppError, 
+  NotFoundError, 
+  BadRequestError, 
+  UnauthorizedError, 
+  InternalServerError 
+} = require('./errors/AppError');
+const path = require('path');
 
-const storage = new Storage();
-const BUCKET_NAME = process.env.BOARD_BUCKET_NAME || 'my-board-storage-bucket';
-
-/**
- * Verifies the provided token against the hash stored in the environment.
- * @param {string} token The token to verify.
- * @returns {Promise<boolean>} True if the token is valid, false otherwise.
- */
-const verifyToken = async (token) => {
-  const hash = process.env.TOKEN_HASH;
-  if (!hash || !token) {
-    return false;
-  }
-  try {
-    return await bcrypt.compare(token, hash);
-  } catch (error) {
-    console.error('Error during bcrypt comparison:', error);
-    return false;
-  }
-};
+// Initialization
+console.log('__dirname:', __dirname);
+const storageDir = path.join(__dirname, 'storage/local_files');
+console.log('Storage directory:', storageDir);
+const storage = new LocalStorage(storageDir);
+const backendService = new BackendServiceImpl(storage);
 
 /**
- * HTTP Cloud Function to persist board JSON to GCS.
- * Handles full document replacement pattern.
- * 
- * @param {Object} req Cloud Function request context.
- * @param {Object} res Cloud Function response context.
+ * Error mapping function
+ * @param {Error} error 
+ * @returns {object} { statusCode, message }
  */
-exports.persistBoard = async (req, res) => {
-  // Enable CORS
+function mapError(error) {
+  if (error instanceof AppError) {
+    return { statusCode: error.statusCode, message: error.message };
+  }
+  console.error('Unhandled Error:', error);
+  return { statusCode: 500, message: 'Internal Server Error' };
+}
+
+/**
+ * Main GCF Entry Point
+ */
+functions.http('api', async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
-    res.set('Access-Control-Allow-Methods', 'POST, GET');
-    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.set('Access-Control-Max-Age', '3600');
-    res.status(204).send('');
-    return;
+    return res.status(204).send('');
   }
 
-  const token = req.headers.authorization || '';
-  
-  if (!(await verifyToken(token))) {
-    return res.status(401).send({ error: 'Unauthorized: Invalid or missing token.' });
-  }
+  const { method, url, body } = req;
 
-  // Handle GET request: Fetch board by UUID
-  // Expects query parameter: ?uuid=[uuid]
-  if (req.method === 'GET') {
-    const uuid = req.query.uuid;
-    if (!uuid) {
-      return res.status(400).send({ error: 'Missing uuid query parameter.' });
+  try {
+    // Simple Router
+    
+    // POST /register
+    if (method === 'POST' && url.includes('/register')) {
+      if (!body || !body.editToken) {
+        throw new BadRequestError('editToken is required');
+      }
+      const boardId = await backendService.handleRegistration(body.editToken);
+      return res.status(201).json({ boardId });
     }
 
-    try {
-      const bucket = storage.bucket(BUCKET_NAME);
-      const fileName = `boards/${uuid}.json`;
-      const file = bucket.file(fileName);
+    // GET /board/:boardId
+    const boardMatch = url.match(/\/board\/([^/]+)/);
+    if (method === 'GET' && boardMatch) {
+      const boardId = boardMatch[1];
+      const board = await backendService.getBoard(boardId);
+      if (!board) {
+        throw new NotFoundError('Board not found');
+      }
+      return res.status(200).json(board);
+    }
 
-      const [exists] = await file.exists();
-      if (!exists) {
-        return res.status(404).send({ error: 'Board not found.' });
+    // PUT /board/:boardId
+    if (method === 'PUT' && boardMatch) {
+      const boardId = boardMatch[1];
+      if (!body || !body.board) {
+        throw new BadRequestError('Board data is required');
+      }
+      await backendService.saveBoard(boardId, body.board);
+      return res.status(204).send();
+    }
+
+    // POST /validate
+    if (method === 'POST' && url.includes('/validate')) {
+      const { boardId, editToken } = body || {};
+
+      if (!boardId || !editToken) {
+        throw new BadRequestError('boardId and editToken are required in the request body');
       }
 
-      const [content] = await file.download();
-      const board = JSON.parse(content.toString());
-
-      res.status(200).send(board);
-    } catch (error) {
-      console.error('Error fetching board from GCS:', error);
-      res.status(500).send({ error: 'Internal Server Error: Failed to fetch board.' });
+      const isValid = await backendService.validateEditToken(boardId, editToken);
+      return res.status(200).json({ isValid });
     }
-    return;
+
+    // Default 404
+    throw new NotFoundError('Route not found');
+
+  } catch (error) {
+    const { statusCode, message } = mapError(error);
+    res.status(statusCode).json({ error: message });
   }
-
-  // Handle POST request: Save board
-  if (req.method === 'POST') {
-    const { board, fileName } = req.body;
-
-    if (!board) {
-      return res.status(400).send({ error: 'Missing board object in request body.' });
-    }
-
-    if (!fileName) {
-      return res.status(400).send({ error: 'Missing fileName in request body.' });
-    }
-
-    try {
-      const bucket = storage.bucket(BUCKET_NAME);
-      const file = bucket.file(fileName);
-
-      // Full document replacement pattern: overwrite the file with the new JSON content
-      await file.save(JSON.stringify(board, null, 2), {
-        contentType: 'application/json',
-        resumable: false
-      });
-
-      console.log(`Successfully saved board to ${fileName} in bucket ${BUCKET_NAME}`);
-      res.status(200).send({ message: 'Board persisted successfully.' });
-    } catch (error) {
-      console.error('Error saving board to GCS:', error);
-      res.status(500).send({ error: 'Internal Server Error: Failed to save board.' });
-    }
-    return;
-  }
-
-  res.status(405).send({ error: 'Method Not Allowed' });
-};
+});

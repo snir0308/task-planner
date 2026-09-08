@@ -4,6 +4,7 @@
   "description": "Google Cloud Function to persist board JSON to GCS",
   "main": "index.js",
   "dependencies": {
+    "@google-cloud/functions-framework": "^5.0.5",
     "@google-cloud/storage": "^7.0.0",
     "bcrypt": "^6.0.0"
   },
