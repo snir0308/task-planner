@@ -8,7 +8,7 @@ async function initApp() {
   let baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   try {
-    const response = await fetch("/config.json");
+    const response = await fetch("./config.json");
     if (response.ok) {
       const config = await response.json();
       if (config.VITE_API_BASE_URL) {
