@@ -3,11 +3,6 @@ import RegistrationPage from "./components/RegistrationPage.jsx";
 import ViewOnlyBoard from "./components/ViewOnlyBoard.jsx";
 import TokenVerificationPage from "./components/TokenVerificationPage.jsx";
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import RegistrationPage from "./components/RegistrationPage.jsx";
-import ViewOnlyBoard from "./components/ViewOnlyBoard.jsx";
-import TokenVerificationPage from "./components/TokenVerificationPage.jsx";
-
 export default function App() {
   return (
     <Router basename="/task-planner">
