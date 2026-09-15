@@ -5,7 +5,7 @@ import TokenVerificationPage from "./components/TokenVerificationPage.jsx";
 
 export default function App() {
   return (
-    <Router basename="/task-planner">
+    <Router>
       <Routes>
         <Route path="/" element={<RegistrationPage />} />
          <Route path="/edit/:boardId" element={<TokenVerificationPage />} />
