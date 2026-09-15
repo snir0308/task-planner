@@ -3,6 +3,8 @@ name: Deploy Frontend to GitHub Pages
 on:
   push:
     branches: ["main"]
+    paths:
+      - 'frontend/**'
 
   # Allows you to manually trigger a workflow (e.g. for testing)
   workflow_dispatch:
